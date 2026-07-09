@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Input, Select, Tag, Typography, Card, Space, Button, message, Layout, Divider } from 'antd';
+import {
+  Table,
+  Input,
+  Select,
+  Tag,
+  Typography,
+  Card,
+  Space,
+  Button,
+  message,
+  Layout,
+  Divider,
+  Tooltip,
+} from 'antd';
 import { SearchOutlined, FilterOutlined, FileTextOutlined, UndoOutlined } from '@ant-design/icons';
 import { Product } from '@/lib/csv';
 import ProductModal from '@/components/ProductModal';
@@ -57,8 +70,7 @@ export default function Home() {
         product.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.nombre.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === 'Todos' || product.estatus === statusFilter;
+      const matchesStatus = statusFilter === 'Todos' || product.estatus === statusFilter;
 
       const matchesReviewer =
         reviewerFilter === 'Todos' ||
@@ -78,13 +90,29 @@ export default function Home() {
   const renderStatusTag = (status: string) => {
     switch (status) {
       case 'Por revisar':
-        return <Tag color="default" className="px-2 py-0.5 rounded font-medium">Por revisar</Tag>;
+        return (
+          <Tag color="default" className="px-2 py-0.5 rounded font-medium">
+            Por revisar
+          </Tag>
+        );
       case 'En revisión':
-        return <Tag color="processing" className="px-2 py-0.5 rounded font-medium">En revisión</Tag>;
+        return (
+          <Tag color="processing" className="px-2 py-0.5 rounded font-medium">
+            En revisión
+          </Tag>
+        );
       case 'Autorizado':
-        return <Tag color="success" className="px-2 py-0.5 rounded font-medium">Autorizado</Tag>;
+        return (
+          <Tag color="success" className="px-2 py-0.5 rounded font-medium">
+            Autorizado
+          </Tag>
+        );
       case 'Requiere ajustes':
-        return <Tag color="error" className="px-2 py-0.5 rounded font-medium">Requiere ajustes</Tag>;
+        return (
+          <Tag color="error" className="px-2 py-0.5 rounded font-medium">
+            Requiere ajustes
+          </Tag>
+        );
       default:
         return <Tag>{status}</Tag>;
     }
@@ -94,11 +122,23 @@ export default function Home() {
   const renderMarcaTag = (marca: string) => {
     switch (marca) {
       case 'Naresa':
-        return <Tag color="orange" className="px-2 py-0.5 rounded font-medium">Naresa</Tag>;
+        return (
+          <Tag color="orange" className="px-2 py-0.5 rounded font-medium">
+            Naresa
+          </Tag>
+        );
       case 'Equilinea':
-        return <Tag color="green" className="px-2 py-0.5 rounded font-medium">Equilinea</Tag>;
+        return (
+          <Tag color="green" className="px-2 py-0.5 rounded font-medium">
+            Equilinea
+          </Tag>
+        );
       case 'Proquip':
-        return <Tag color="blue" className="px-2 py-0.5 rounded font-medium">Proquip</Tag>;
+        return (
+          <Tag color="blue" className="px-2 py-0.5 rounded font-medium">
+            Proquip
+          </Tag>
+        );
       default:
         return <Tag>{marca}</Tag>;
     }
@@ -126,15 +166,20 @@ export default function Home() {
       title: 'Nombre',
       dataIndex: 'nombre',
       key: 'nombre',
-      width: '24%',
+      align: 'left' as const,
+      ellipsis: true,
+      width: '300px',
       render: (text: string, record: Product) => (
-        <Button
-          type="link"
-          className="p-0 font-medium text-left hover:text-indigo-600 dark:hover:text-indigo-400 whitespace-normal h-auto"
-          onClick={() => openProductReview(record)}
-        >
-          {text}
-        </Button>
+        <Tooltip title={text.trim()} placement="topLeft">
+          <Button
+            type="link"
+            style={{ padding: 0, textAlign: 'left' }}
+            className="p-0 font-medium text-left hover:text-indigo-600 dark:hover:text-indigo-400 flex justify-start items-center w-full h-auto"
+            onClick={() => openProductReview(record)}
+          >
+            <span className="truncate max-w-[300px] block">{text.trim()}</span>
+          </Button>
+        </Tooltip>
       ),
       sorter: (a: Product, b: Product) => a.nombre.localeCompare(b.nombre),
     },
@@ -171,7 +216,12 @@ export default function Home() {
       dataIndex: 'revisadoPor',
       key: 'revisadoPor',
       width: '15%',
-      render: (text: string) => text ? <span className="font-medium text-zinc-700 dark:text-zinc-300">{text}</span> : <Text type="secondary">-</Text>,
+      render: (text: string) =>
+        text ? (
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">{text}</span>
+        ) : (
+          <Text type="secondary">-</Text>
+        ),
       sorter: (a: Product, b: Product) => a.revisadoPor.localeCompare(b.revisadoPor),
     },
     {
@@ -202,7 +252,11 @@ export default function Home() {
               <span className="p-1.5 bg-indigo-600 rounded-lg text-white text-xs flex items-center justify-center shadow-md shadow-indigo-500/20">
                 <FileTextOutlined style={{ fontSize: '18px' }} />
               </span>
-              <Title level={2} style={{ margin: 0, fontWeight: 700 }} className="text-zinc-800 dark:text-zinc-100">
+              <Title
+                level={2}
+                style={{ margin: 0, fontWeight: 700 }}
+                className="text-zinc-800 dark:text-zinc-100"
+              >
                 Verificador de Productos 360°
               </Title>
             </div>
@@ -210,10 +264,10 @@ export default function Home() {
               Administración y control de calidad de fotogramas 360° de productos NARESA.
             </Text>
           </div>
-          
-          <Button 
-            icon={<UndoOutlined />} 
-            onClick={fetchProducts} 
+
+          <Button
+            icon={<UndoOutlined />}
+            onClick={fetchProducts}
             loading={loading}
             className="self-start md:self-auto hover:border-indigo-500 hover:text-indigo-600"
           >
@@ -276,11 +330,14 @@ export default function Home() {
         </Card>
 
         {/* Main Products Table */}
-        <Card className="shadow-md border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden p-0" bodyStyle={{ padding: 0 }}>
+        <Card
+          className="shadow-md border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden p-0"
+          bodyStyle={{ padding: 0 }}
+        >
           <Table
             dataSource={filteredProducts}
             columns={columns}
-            rowKey={(record) => `${record.codigo}-${record.marca}`}
+            rowKey="id"
             loading={loading}
             pagination={{
               defaultPageSize: 10,

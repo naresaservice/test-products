@@ -14,17 +14,28 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { codigo, marca, estatus, revisadoPor, observaciones } = body;
-
-    if (!codigo || !marca) {
-      return NextResponse.json({ success: false, error: 'Both Codigo and Marca are required to identify the product' }, { status: 400 });
-    }
+    const { id, codigo, marca, estatus, revisadoPor, observaciones } = body;
 
     const products = readCSV();
-    const index = products.findIndex(p => p.codigo === codigo && p.marca === marca);
+    let index = -1;
+
+    if (id !== undefined && id !== null) {
+      const parsedId = Number(id);
+      if (!isNaN(parsedId) && parsedId >= 0 && parsedId < products.length) {
+        index = parsedId;
+      }
+    }
+
+    // Fallback to code and brand if ID is not found or not provided
+    if (index === -1) {
+      if (!codigo || !marca) {
+        return NextResponse.json({ success: false, error: 'Both Codigo and Marca, or a valid ID, are required to identify the product' }, { status: 400 });
+      }
+      index = products.findIndex(p => p.codigo === codigo && p.marca === marca);
+    }
 
     if (index === -1) {
-      return NextResponse.json({ success: false, error: `Product with code ${codigo} and brand ${marca} not found` }, { status: 404 });
+      return NextResponse.json({ success: false, error: `Product not found` }, { status: 404 });
     }
 
     // Capture modification time in America/Hermosillo timezone (sv-SE format gives YYYY-MM-DD HH:mm:ss)

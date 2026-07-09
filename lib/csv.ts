@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 export interface Product {
+  id?: string;
   codigo: string;
   nombre: string;
   marca: string;
@@ -89,6 +90,7 @@ export function readCSV(): Product[] {
       const values = parseCSVLine(lines[i]);
       if (values.length >= 6) {
         products.push({
+          id: String(i - 1),
           codigo: values[0],
           nombre: values[1],
           marca: values[2],

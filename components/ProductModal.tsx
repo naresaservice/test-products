@@ -151,6 +151,7 @@ export default function ProductModal({ visible, product, onClose, onSaveSuccess 
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: product.id,
           codigo: product.codigo,
           marca: product.marca,
           revisadoPor: values.revisadoPor,
