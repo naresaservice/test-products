@@ -21,7 +21,38 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Marca query parameter is required' }, { status: 400 });
     }
 
-    const dirPath = path.join(process.cwd(), 'public', 'videos', codigo, marca);
+    const parentDir = path.join(process.cwd(), 'public', 'videos', codigo);
+
+    if (!fs.existsSync(parentDir)) {
+      return NextResponse.json({ success: true, data: [] });
+    }
+
+    const subdirs = fs.readdirSync(parentDir);
+
+    // Search for a subdirectory containing 'naresa' (case-insensitive)
+    let matchedDir = subdirs.find(dir => {
+      try {
+        const fullPath = path.join(parentDir, dir);
+        return fs.statSync(fullPath).isDirectory() && dir.toLowerCase().includes('naresa');
+      } catch {
+        return false;
+      }
+    });
+
+    // Fallback: search for a subdirectory containing the brand name (case-insensitive)
+    if (!matchedDir) {
+      matchedDir = subdirs.find(dir => {
+        try {
+          const fullPath = path.join(parentDir, dir);
+          return fs.statSync(fullPath).isDirectory() && dir.toLowerCase().includes(marca.toLowerCase());
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    const dirName = matchedDir || marca;
+    const dirPath = path.join(parentDir, dirName);
 
     if (!fs.existsSync(dirPath)) {
       return NextResponse.json({ success: true, data: [] });
@@ -37,7 +68,7 @@ export async function GET(
       })
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-    const imageUrls = imageFiles.map(file => `/videos/${codigo}/${marca}/${file}`);
+    const imageUrls = imageFiles.map(file => `/videos/${codigo}/${dirName}/${file}`);
 
     return NextResponse.json({ success: true, data: imageUrls });
   } catch (error) {
