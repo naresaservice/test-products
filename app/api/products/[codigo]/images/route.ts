@@ -61,12 +61,20 @@ export async function GET(
     const files = fs.readdirSync(dirPath);
     
     // Filter for images and sort alphabetically
-    const imageFiles = files
+    let imageFiles = files
       .filter(file => {
         const ext = path.extname(file).toLowerCase();
         return ['.png', '.jpg', '.jpeg', '.webp'].includes(ext);
       })
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+    // Auto-downsample if there are too many frames to optimize network loading time
+    // 72 frames is the industry standard for high-quality, extremely fluid 360 views
+    const MAX_FRAMES = 72;
+    if (imageFiles.length > MAX_FRAMES) {
+      const step = Math.ceil(imageFiles.length / MAX_FRAMES);
+      imageFiles = imageFiles.filter((_, index) => index % step === 0);
+    }
 
     const imageUrls = imageFiles.map(file => `/videos/${codigo}/${dirName}/${file}`);
 
