@@ -29,22 +29,22 @@ export async function GET(
 
     const subdirs = fs.readdirSync(parentDir);
 
-    // Search for a subdirectory containing 'naresa' (case-insensitive)
+    // Search for a subdirectory containing the brand name (case-insensitive)
     let matchedDir = subdirs.find(dir => {
       try {
         const fullPath = path.join(parentDir, dir);
-        return fs.statSync(fullPath).isDirectory() && dir.toLowerCase().includes('naresa');
+        return fs.statSync(fullPath).isDirectory() && dir.toLowerCase().includes(marca.toLowerCase());
       } catch {
         return false;
       }
     });
 
-    // Fallback: search for a subdirectory containing the brand name (case-insensitive)
+    // Fallback: search for a subdirectory containing 'naresa' (case-insensitive)
     if (!matchedDir) {
       matchedDir = subdirs.find(dir => {
         try {
           const fullPath = path.join(parentDir, dir);
-          return fs.statSync(fullPath).isDirectory() && dir.toLowerCase().includes(marca.toLowerCase());
+          return fs.statSync(fullPath).isDirectory() && dir.toLowerCase().includes('naresa');
         } catch {
           return false;
         }
