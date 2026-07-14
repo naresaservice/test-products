@@ -108,7 +108,7 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
   // Hook up non-passive wheel event listener on container to prevent browser zoom
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || images.length === 0 || preloading) return;
+    if (!container || images.length === 0) return;
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault(); // Stop default browser zoom
@@ -129,7 +129,7 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
 
   // Pointer event handlers - Always rotates the product, even when zoomed
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (images.length === 0 || preloading) return;
+    if (images.length === 0) return;
     
     isDragging.current = true;
     startX.current = e.clientX;
@@ -209,19 +209,7 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
     );
   }
 
-  if (preloading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-80 md:h-[calc(90vh-160px)] aspect-square bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 text-center mx-auto">
-        <Spin size="large" className="mb-4" />
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Precargando imágenes 360° para rotación fluida...
-        </span>
-        <div className="w-48 mt-2">
-          <Progress percent={preloadProgress} size="small" status="active" />
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="flex flex-col items-center justify-center w-full">
@@ -233,6 +221,13 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
+        {/* Floating Preload Progress (Top Left) */}
+        {preloading && (
+          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 pointer-events-none z-20">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping" />
+            <span>Cargando 360°... {preloadProgress}%</span>
+          </div>
+        )}
         {/* Render current frame scaled in place */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
