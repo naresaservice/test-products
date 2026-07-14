@@ -63,7 +63,8 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
             list.forEach((src: string) => {
               const img = new Image();
               img.src = src;
-              img.onload = () => {
+
+              const handleLoaded = () => {
                 if (!active) return;
                 loadedCount++;
                 const progress = Math.round((loadedCount / list.length) * 100);
@@ -72,15 +73,16 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
                   setPreloading(false);
                 }
               };
-              img.onerror = () => {
-                if (!active) return;
-                loadedCount++;
-                const progress = Math.round((loadedCount / list.length) * 100);
-                setPreloadProgress(progress);
-                if (loadedCount === list.length) {
-                  setPreloading(false);
-                }
-              };
+
+              // Use browser off-thread image decoding to avoid lagging the main thread
+              if (typeof img.decode === 'function') {
+                img.decode()
+                  .then(handleLoaded)
+                  .catch(handleLoaded);
+              } else {
+                img.onload = handleLoaded;
+                img.onerror = handleLoaded;
+              }
             });
           }
         } else {
@@ -228,17 +230,24 @@ export default function ThreeSixtyViewer({ codigo, marca }: ThreeSixtyViewerProp
             <span>Cargando 360°... {preloadProgress}%</span>
           </div>
         )}
-        {/* Render current frame scaled in place */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={images[currentIndex]}
-          alt={`Frame 360 - ${codigo} - ${currentIndex}`}
-          className="max-w-full max-h-full object-contain select-none pointer-events-none origin-center"
-          style={{
-            transform: `scale(${zoom})`,
-            transition: isDragging.current ? 'none' : 'transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          }}
-        />
+        {/* Render all frames preloaded in the DOM and toggle opacity/visibility.
+            This avoids re-triggering image decode on the main thread when dragging. */}
+        {images.map((src, index) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={src}
+            src={src}
+            alt={`Frame 360 - ${codigo} - ${index}`}
+            className="max-w-full max-h-full object-contain select-none pointer-events-none origin-center absolute inset-0 m-auto"
+            style={{
+              transform: `scale(${zoom})`,
+              transition: isDragging.current ? 'none' : 'transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              opacity: index === currentIndex ? 1 : 0,
+              visibility: index === currentIndex ? 'visible' : 'hidden',
+              zIndex: index === currentIndex ? 10 : 1,
+            }}
+          />
+        ))}
 
         {/* Floating Zoom Controls (Top Right) - White background with black icons */}
         <div 
