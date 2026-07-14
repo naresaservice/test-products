@@ -81,23 +81,111 @@ export function readCSV(): Product[] {
   initializeCSV();
   try {
     const data = fs.readFileSync(csvFilePath, 'utf-8');
-    const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
-    if (lines.length <= 1) return []; // Only header or empty
+    
+    // Parse CSV properly respecting quotes and newlines inside fields
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < data.length; i++) {
+      const char = data[i];
+      const nextChar = data[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          currentField += '"';
+          i++; // skip next quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        currentRow.push(currentField);
+        currentField = '';
+      } else if ((char === '\r' || char === '\n') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') {
+          i++; // skip \n
+        }
+        currentRow.push(currentField);
+        if (currentRow.some(val => val.trim().length > 0)) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        currentField = '';
+      } else {
+        currentField += char;
+      }
+    }
+    
+    // Flush last row if any
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(val => val.trim().length > 0)) {
+        rows.push(currentRow);
+      }
+    }
+    
+    if (rows.length <= 1) return []; // Only header or empty
     
     const products: Product[] = [];
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
-      if (values.length >= 6) {
+    
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i];
+      // Clean values: trim and strip wrapping quotes if any
+      const cleanedValues = values.map(val => {
+        let cleaned = val.trim();
+        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+          cleaned = cleaned.slice(1, -1).trim();
+        }
+        return cleaned;
+      });
+
+      if (cleanedValues.length >= 6) {
+        const codigo = cleanedValues[0];
+        const nombre = cleanedValues[1];
+        const marca = cleanedValues[2];
+        
+        // Skip header row if found in the middle, or corrupt/empty rows
+        if (codigo.toLowerCase() === 'codigo' || !nombre || !marca) {
+          continue;
+        }
+        
+        // A valid product code must start with a digit
+        // and a valid brand name (marca) should NOT be numeric
+        const isNumericCodigo = /^\d+/.test(codigo);
+        const isNumericMarca = /^\d+$/.test(marca);
+        if (!isNumericCodigo || isNumericMarca) {
+          continue;
+        }
+
+        // Strategy to handle observations with commas even if not quoted:
+        // Everything from index 5 onwards is observations, except for the last column
+        // if it represents a date (or an empty space after a trailing comma).
+        const lastValue = cleanedValues[cleanedValues.length - 1];
+        const hasDateAtEnd = /\d{4}-\d{2}-\d{2}/.test(lastValue) || lastValue === '';
+        
+        let observaciones = '';
+        let fechaModificacion = '';
+        
+        if (hasDateAtEnd) {
+          fechaModificacion = lastValue;
+          // Join index 5 to second-to-last
+          observaciones = cleanedValues.slice(5, cleanedValues.length - 1).join(', ');
+        } else {
+          fechaModificacion = '';
+          // Join index 5 to the very end
+          observaciones = cleanedValues.slice(5).join(', ');
+        }
+
         products.push({
-          id: String(i - 1),
-          codigo: values[0],
-          nombre: values[1],
-          marca: values[2],
-          estatus: values[3],
-          revisadoPor: values[4] || '',
-          observaciones: values[5] || '',
-          fechaModificacion: values[6] || '',
+          id: String(products.length), // Set sequential id
+          codigo,
+          nombre,
+          marca,
+          estatus: cleanedValues[3],
+          revisadoPor: cleanedValues[4] || '',
+          observaciones,
+          fechaModificacion,
         });
       }
     }
